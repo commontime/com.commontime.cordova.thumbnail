@@ -1,0 +1,30 @@
+{
+  "name": "com.commontime.cordova.thumbnail",
+  "version": "0.0.1",
+  "description": "Commontime cordova thumbnail plugin.",
+  "cordova": {
+    "id": "com.commontime.cordova.thumbnail",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/commontime/com.commontime.cordova.thumbnail.git"
+  },
+  "keywords": [
+    "cordova",
+    "thumbnail",
+    "commontime",
+    "cordova-android"
+  ],
+  "engines": [
+    {
+      "name": "cordova",
+      "version": ">=3.0.0"
+    }
+  ],
+  "author": "Commontime Ltd",
+  "license": "MIT"
+}

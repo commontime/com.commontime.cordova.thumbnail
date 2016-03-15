@@ -3,11 +3,11 @@ package com.commontime.plugin;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
 import org.apache.cordova.*;
-import org.eclipse.jgit.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -127,7 +127,7 @@ public class Thumbnail extends CordovaPlugin {
 
         String mimeType = getMimeType(path);
 
-        if (mimeType == null || StringUtils.isEmptyOrNull(mimeType)) {
+        if (TextUtils.isEmpty(mimeType)) {
             callbackContext.error("thumbnail error: unable to open image at " + path);
             return;
         }

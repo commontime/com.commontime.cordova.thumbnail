@@ -1,4 +1,5 @@
 #import "Thumbnail.h"
+#import "CDVFile.h"
 #import "NSData+Base64.h"
 
 @implementation Thumbnail
@@ -8,7 +9,24 @@
     @try
     {
         NSString* filePath = [command.arguments objectAtIndex: 0];
-    
+        
+        if([filePath containsString:@"cdvfile://"])
+        {
+            CDVFile *filePlugin = [[CDVFile alloc] init];
+            [filePlugin pluginInitialize];
+            CDVFilesystemURL* url = [CDVFilesystemURL fileSystemURLWithString:filePath];
+            filePath= [filePlugin filesystemPathForURL:url];
+        }
+        
+        NSString *mimieType = [self mimeTypeForFileAtPath:filePath];
+        
+        if(mimieType == nil)
+        {
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_ERROR messageAsString: [NSString stringWithFormat:@"Unable to load file at %@", filePath]];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            return;
+        }
+        
         if ([filePath length] == 0)
         {
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_ERROR messageAsString: @"no file path"];
@@ -22,7 +40,8 @@
         NSInteger quality = [[command.arguments objectAtIndex: 3] integerValue];
         NSData* originalData;
         
-        if (![filePath containsString:@"http://"] && ![[filePath lowercaseString] hasPrefix: @"file://"])
+        if([filePath containsString:@"cdvfile://"]){}
+        else if (![filePath containsString:@"http://"] && ![[filePath lowercaseString] hasPrefix: @"file://"])
         {
             if ([filePath characterAtIndex: 0] == '/')
                 filePath = [NSString stringWithFormat:@"file://%@", filePath];
@@ -61,10 +80,16 @@
         [original drawInRect: CGRectMake(0, 0, thumbSize.width, thumbSize.height)];
         
         UIImage* thumb = UIGraphicsGetImageFromCurrentImageContext();
-        NSData* thumbData = UIImageJPEGRepresentation(thumb, quality / 100.0);
-        NSString* prefix = @"data:image/jpeg;base64,";
+        
+        NSData* thumbData = nil;
+        
+        if([mimieType isEqualToString:@"image/png"])
+            thumbData = UIImagePNGRepresentation(thumb);
+        else
+            thumbData = UIImageJPEGRepresentation(thumb, quality / 100.0);
+        
         NSString* thumbBase64 = [thumbData base64EncodedString];
-        NSString* message = [prefix stringByAppendingString: thumbBase64];
+        NSString* message = [NSString stringWithFormat:@"data:%@;base64,%@", mimieType, thumbBase64];
         
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_OK messageAsString: message];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -73,6 +98,22 @@
     {
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_ERROR messageAsString: exception.reason];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }}
+    }
+}
+
+-  (NSString*) mimeTypeForFileAtPath: (NSString *) path
+{
+    NSURL *fileUrl = [NSURL fileURLWithPath:[path stringByExpandingTildeInPath]];
+    
+    NSURLRequest* fileUrlRequest = [[NSURLRequest alloc] initWithURL:fileUrl cachePolicy:NSURLCacheStorageNotAllowed timeoutInterval:.1];
+    
+    NSError *error = nil;
+    NSURLResponse *response = nil;
+    NSData *fileData = [NSURLConnection sendSynchronousRequest:fileUrlRequest returningResponse:&response error:&error];
+    
+    NSString *mimeType = [response MIMEType];
+    
+    return mimeType;
+}
 
 @end

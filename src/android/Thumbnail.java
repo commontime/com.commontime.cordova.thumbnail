@@ -2,9 +2,12 @@ package com.commontime.plugin;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.util.Base64;
+import android.webkit.MimeTypeMap;
 
 import org.apache.cordova.*;
+import org.eclipse.jgit.util.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -38,7 +41,16 @@ public class Thumbnail extends CordovaPlugin {
 
     private void getThumbnail(String path, int maxWidth, int maxHeight, int quality, CallbackContext callbackContext)
     {
-        path = path.replace("file://", "");
+        if(path.contains("cdvfile://"))
+        {
+            CordovaResourceApi resourceApi = webView.getResourceApi();
+            Uri fileURL = resourceApi.remapUri(Uri.parse(path));
+            path = fileURL.getPath();
+        }
+        else
+        {
+            path = path.replace("file://", "");
+        }
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
@@ -113,8 +125,22 @@ public class Thumbnail extends CordovaPlugin {
             original.recycle();
         }
 
+        String mimeType = getMimeType(path);
+
+        if (mimeType == null || StringUtils.isEmptyOrNull(mimeType)) {
+            callbackContext.error("thumbnail error: unable to open image at " + path);
+            return;
+        }
+
+        Bitmap.CompressFormat compressFormat = null;
+
+        if(mimeType.equals("image/png"))
+            compressFormat = Bitmap.CompressFormat.PNG;
+        else
+            compressFormat = Bitmap.CompressFormat.JPEG;
+
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        thumb.compress(Bitmap.CompressFormat.JPEG, quality, output);
+        thumb.compress(compressFormat, quality, output);
         thumb.recycle();
 
         String base64 = Base64.encodeToString(output.toByteArray(), Base64.DEFAULT);
@@ -125,6 +151,23 @@ public class Thumbnail extends CordovaPlugin {
             return;
         }
 
-        callbackContext.success("data:image/jpeg;base64," + base64);
+        callbackContext.success(String.format("data:%s;base64,%s", mimeType, base64));
+    }
+
+    public static String getMimeType(String url)
+    {
+        try
+        {
+            String type = null;
+            String extension = MimeTypeMap.getFileExtensionFromUrl(url);
+            if (extension != null) {
+                type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+            }
+            return type;
+        }
+        catch(Exception e)
+        {
+            return null;
+        }
     }
 }

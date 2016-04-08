@@ -38,8 +38,14 @@
 
   </platform>
 
-  <platform name="wp7">
-    <source-file src="src/wp7/Hello.cs"/>
+  <platform name="wp8">
+    <config-file target="config.xml" parent="/*">
+      <feature name="Thumbnail">
+        <param name="ios-package" value="ThumbnailPlugin" />
+      </feature>
+    </config-file>
+
+    <header-file src="src/wp8/ThumbnailPlugin.cs"/>
   </platform>
 
 </plugin>

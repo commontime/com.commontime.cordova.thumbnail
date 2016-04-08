@@ -41,7 +41,7 @@
   <platform name="wp8">
     <config-file target="config.xml" parent="/*">
       <feature name="Thumbnail">
-        <param name="ios-package" value="ThumbnailPlugin" />
+        <param name="wp-package" value="ThumbnailPlugin" />
       </feature>
     </config-file>
 

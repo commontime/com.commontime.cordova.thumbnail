@@ -45,7 +45,7 @@
       </feature>
     </config-file>
 
-    <header-file src="src/wp8/ThumbnailPlugin.cs"/>
+    <source-file src="src/wp8/ThumbnailPlugin.cs"/>
   </platform>
 
 </plugin>

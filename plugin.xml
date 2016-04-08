@@ -46,6 +46,8 @@
     </config-file>
 
     <source-file src="src/wp8/ThumbnailPlugin.cs"/>
+    <framework src="src/wp8/Newtonsoft.Json.dll" custom="true" />
+ 
   </platform>
 
 </plugin>

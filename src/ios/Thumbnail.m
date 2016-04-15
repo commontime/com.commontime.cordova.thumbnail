@@ -18,15 +18,6 @@
             filePath= [filePlugin filesystemPathForURL:url];
         }
         
-        NSString *mimieType = [self mimeTypeForFileAtPath:filePath];
-        
-        if(mimieType == nil)
-        {
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_ERROR messageAsString: [NSString stringWithFormat:@"Unable to load file at %@", filePath]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            return;
-        }
-        
         if ([filePath length] == 0)
         {
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_ERROR messageAsString: @"no file path"];
@@ -51,6 +42,13 @@
         
         NSURL* fileURL = [NSURL URLWithString: filePath];
         originalData = [NSData dataWithContentsOfURL: fileURL];
+        
+        if (!originalData)
+        {
+            NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+            NSString *finalPath = [NSString stringWithFormat:@"file://%@/www/%@", appFolderPath, @"user-assets/myTestImage.jpg"];
+            originalData = [NSData dataWithContentsOfURL: [NSURL URLWithString:finalPath]];
+        }
         
         if (!originalData)
         {
@@ -83,6 +81,15 @@
         
         NSData* thumbData = nil;
         
+        NSString *mimieType = [self mimeTypeForFileAtPath:originalData];
+        
+        if(mimieType == nil)
+        {
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus: CDVCommandStatus_ERROR messageAsString: [NSString stringWithFormat:@"Unable to load file at %@", filePath]];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            return;
+        }
+        
         if([mimieType isEqualToString:@"image/png"])
             thumbData = UIImagePNGRepresentation(thumb);
         else
@@ -101,19 +108,24 @@
     }
 }
 
--  (NSString*) mimeTypeForFileAtPath: (NSString *) path
+-  (NSString*) mimeTypeForFileAtPath: (NSData *) fileData
 {
-    NSURL *fileUrl = [NSURL fileURLWithPath:[path stringByExpandingTildeInPath]];
-    
-    NSURLRequest* fileUrlRequest = [[NSURLRequest alloc] initWithURL:fileUrl cachePolicy:NSURLCacheStorageNotAllowed timeoutInterval:.1];
-    
-    NSError *error = nil;
-    NSURLResponse *response = nil;
-    NSData *fileData = [NSURLConnection sendSynchronousRequest:fileUrlRequest returningResponse:&response error:&error];
-    
-    NSString *mimeType = [response MIMEType];
-    
-    return mimeType;
+    uint8_t c;
+    [fileData getBytes:&c length:1];
+        
+    switch (c) {
+        case 0xFF:
+            return @"image/jpeg";
+            break;
+        case 0x89:
+            return @"image/png";
+            break;
+        case 0x47:
+            return @"image/gif";
+            break;
+        default:
+            return nil;
+    }
 }
 
 @end

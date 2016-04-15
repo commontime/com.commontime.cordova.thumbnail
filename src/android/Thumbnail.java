@@ -1,5 +1,7 @@
 package com.commontime.plugin;
 
+import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -13,6 +15,7 @@ import org.json.JSONException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 public class Thumbnail extends CordovaPlugin {
@@ -72,18 +75,6 @@ public class Thumbnail extends CordovaPlugin {
             BitmapFactory.decodeFile(path, options);
         }
 
-        final int width = options.outWidth;
-        final int height = options.outHeight;
-        float ratio = 1;
-        if (width > maxWidth || height > maxHeight) {
-            final float widthRatio = (float)maxWidth/(float)width;
-            final float heightRatio = (float)maxHeight/(float)height;
-            ratio = Math.min(widthRatio, heightRatio);
-        }
-
-        options.inSampleSize = (int) (1/ratio);
-        options.inJustDecodeBounds = false;
-
         Bitmap original = null;
 
         if(path.contains("http://"))
@@ -103,10 +94,27 @@ public class Thumbnail extends CordovaPlugin {
             original = BitmapFactory.decodeFile(path, options);
         }
 
+        if(original == null)
+        {
+            original = getBitmapFromAsset(cordova.getActivity(), "www/" + path);
+        }
+
         if (original == null) {
             callbackContext.error("thumbnail error: unable to open image at " + path);
             return;
         }
+
+        final int width = options.outWidth != 0 ? options.outWidth : original.getWidth();
+        final int height = options.outHeight != 0 ? options.outHeight : original.getHeight();
+        float ratio = 1;
+        if (width > maxWidth || height > maxHeight) {
+            final float widthRatio = (float)maxWidth/(float)width;
+            final float heightRatio = (float)maxHeight/(float)height;
+            ratio = Math.min(widthRatio, heightRatio);
+        }
+
+        options.inSampleSize = (int) (1/ratio);
+        options.inJustDecodeBounds = false;
 
         int thumbWidth = Math.round(width * ratio);
         int thumbHeight = Math.round(height * ratio);
@@ -152,6 +160,21 @@ public class Thumbnail extends CordovaPlugin {
         }
 
         callbackContext.success(String.format("data:%s;base64,%s", mimeType, base64));
+    }
+
+    public static Bitmap getBitmapFromAsset(Context context, String filePath) {
+        AssetManager assetManager = context.getAssets();
+
+        InputStream istr;
+        Bitmap bitmap = null;
+        try {
+            istr = assetManager.open(filePath);
+            bitmap = BitmapFactory.decodeStream(istr);
+        } catch (IOException e) {
+            // handle exception
+        }
+
+        return bitmap;
     }
 
     public static String getMimeType(String url)

@@ -14,6 +14,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -91,12 +94,26 @@ public class Thumbnail extends CordovaPlugin {
         }
         else
         {
-            original = BitmapFactory.decodeFile(path, options);
+            try
+            {
+                original = getBitmapFromStorage(path);
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
         }
 
         if(original == null)
         {
-            original = getBitmapFromAsset(cordova.getActivity(), "www/" + path);
+            try
+            {
+                original = getBitmapFromAsset(cordova.getActivity(), "www/" + path);
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
         }
 
         if (original == null) {
@@ -162,19 +179,18 @@ public class Thumbnail extends CordovaPlugin {
         callbackContext.success(String.format("data:%s;base64,%s", mimeType, base64));
     }
 
-    public static Bitmap getBitmapFromAsset(Context context, String filePath) {
+    public Bitmap getBitmapFromAsset(Context context, String filePath) throws Exception
+    {
         AssetManager assetManager = context.getAssets();
 
-        InputStream istr;
-        Bitmap bitmap = null;
-        try {
-            istr = assetManager.open(filePath);
-            bitmap = BitmapFactory.decodeStream(istr);
-        } catch (IOException e) {
-            // handle exception
-        }
+        InputStream istr = assetManager.open(filePath);
+        return BitmapFactory.decodeStream(istr);
+    }
 
-        return bitmap;
+    private Bitmap getBitmapFromStorage(String path) throws Exception
+    {
+        File f=new File(path);
+        return BitmapFactory.decodeStream(new FileInputStream(f));
     }
 
     public static String getMimeType(String url)

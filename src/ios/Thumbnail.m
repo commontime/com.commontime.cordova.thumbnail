@@ -46,7 +46,8 @@
         if (!originalData)
         {
             NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
-            NSString *finalPath = [NSString stringWithFormat:@"file://%@/www/%@", appFolderPath, @"user-assets/myTestImage.jpg"];
+            NSString *adjustedFilePath = [filePath stringByReplacingOccurrencesOfString:@"file:///" withString:@""];
+            NSString *finalPath = [NSString stringWithFormat:@"file://%@/www/%@", appFolderPath, adjustedFilePath];
             originalData = [NSData dataWithContentsOfURL: [NSURL URLWithString:finalPath]];
         }
         

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
         id="com.commontime.cordova.thumbnail"
-        version="1.3.2">
+        version="1.3.3">
 
   <name>Thumbnail</name>
 
@@ -21,7 +21,7 @@
     </config-file>
 
     <source-file src="src/android/Thumbnail.java" target-dir="src/com/commontime/plugin/"/>
-  </platform> 
+  </platform>
 
   <platform name="ios">
 
@@ -47,7 +47,7 @@
 
     <source-file src="src/wp8/ThumbnailPlugin.cs"/>
     <framework src="src/wp8/Newtonsoft.Json.dll" custom="true" />
- 
+
   </platform>
 
 </plugin>

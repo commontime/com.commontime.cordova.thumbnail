@@ -46,7 +46,7 @@
                     filePath = [NSString stringWithFormat:@"file:///%@", filePath];
             }
         
-            NSURL* fileURL = [NSURL URLWithString: filePath];
+            NSURL* fileURL = [NSURL URLWithString: [filePath stringByReplacingOccurrencesOfString:@" " withString:@"%20"]];
             originalData = [NSData dataWithContentsOfURL: fileURL];
         
             if (!originalData)

@@ -9,6 +9,8 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,6 +24,8 @@ import java.io.InputStream;
 import java.net.URL;
 
 public class Thumbnail extends CordovaPlugin {
+
+    private static final int MAX_IMAGE_DECODING_SIZE = 2000;
 
     @Override
     public boolean execute(String action, final JSONArray data, final CallbackContext callbackContext) throws JSONException
@@ -72,10 +76,6 @@ public class Thumbnail extends CordovaPlugin {
             {
                 e.printStackTrace();
             }
-        }
-        else
-        {
-            BitmapFactory.decodeFile(path, options);
         }
 
         Bitmap original = null;
@@ -179,18 +179,61 @@ public class Thumbnail extends CordovaPlugin {
         callbackContext.success(String.format("data:%s;base64,%s", mimeType, base64));
     }
 
-    public Bitmap getBitmapFromAsset(Context context, String filePath) throws Exception
+    public Bitmap getBitmapFromAsset(Context context, String path) throws Exception
     {
         AssetManager assetManager = context.getAssets();
+        InputStream istr = assetManager.open(path);
 
-        InputStream istr = assetManager.open(filePath);
-        return BitmapFactory.decodeStream(istr);
+        Bitmap b = null;
+
+        //Decode image size
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inJustDecodeBounds = true;
+
+        BitmapFactory.decodeStream(istr, null, o);
+
+        int scale = 1;
+        if (o.outHeight > MAX_IMAGE_DECODING_SIZE || o.outWidth > MAX_IMAGE_DECODING_SIZE) {
+            scale = (int)Math.pow(2, (int) Math.ceil(Math.log(MAX_IMAGE_DECODING_SIZE /
+                    (double) Math.max(o.outHeight, o.outWidth)) / Math.log(0.5)));
+        }
+
+        //Decode with inSampleSize
+        BitmapFactory.Options o2 = new BitmapFactory.Options();
+        o2.inSampleSize = scale;
+        b = BitmapFactory.decodeStream(istr, null, o2);
+
+        return b;
     }
 
     private Bitmap getBitmapFromStorage(String path) throws Exception
     {
         File f=new File(path);
-        return BitmapFactory.decodeStream(new FileInputStream(f));
+
+        Bitmap b = null;
+
+        //Decode image size
+        BitmapFactory.Options o = new BitmapFactory.Options();
+        o.inJustDecodeBounds = true;
+
+        FileInputStream fis = new FileInputStream(f);
+        BitmapFactory.decodeStream(fis, null, o);
+        fis.close();
+
+        int scale = 1;
+        if (o.outHeight > MAX_IMAGE_DECODING_SIZE || o.outWidth > MAX_IMAGE_DECODING_SIZE) {
+            scale = (int)Math.pow(2, (int) Math.ceil(Math.log(MAX_IMAGE_DECODING_SIZE /
+                    (double) Math.max(o.outHeight, o.outWidth)) / Math.log(0.5)));
+        }
+
+        //Decode with inSampleSize
+        BitmapFactory.Options o2 = new BitmapFactory.Options();
+        o2.inSampleSize = scale;
+        fis = new FileInputStream(f);
+        b = BitmapFactory.decodeStream(fis, null, o2);
+        fis.close();
+
+        return b;
     }
 
     public static String getMimeType(String url)
@@ -198,6 +241,8 @@ public class Thumbnail extends CordovaPlugin {
         try
         {
             String type = null;
+            url = url.toLowerCase();
+            url = url.replace(" ", "%20");
             String extension = MimeTypeMap.getFileExtensionFromUrl(url);
             if (extension != null) {
                 type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);

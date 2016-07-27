@@ -9,8 +9,6 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,7 +16,6 @@ import org.json.JSONException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -70,8 +67,6 @@ public class Thumbnail extends CordovaPlugin {
             try
             {
                 URL url = new URL(path);
-
-                Bitmap b = null;
 
                 //Decode image size
                 BitmapFactory.Options o = new BitmapFactory.Options();

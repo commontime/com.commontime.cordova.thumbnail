@@ -67,6 +67,21 @@ public class Thumbnail extends CordovaPlugin {
             try
             {
                 URL url = new URL(path);
+                BitmapFactory.decodeStream(url.openConnection().getInputStream(), null, options);
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        Bitmap original = null;
+
+        if(path.contains("http://"))
+        {
+            try
+            {
+                URL url = new URL(path);
 
                 //Decode image size
                 BitmapFactory.Options o = new BitmapFactory.Options();
@@ -85,21 +100,6 @@ public class Thumbnail extends CordovaPlugin {
                 o2.inSampleSize = scale;
 
                 original = BitmapFactory.decodeStream(url.openConnection().getInputStream(), null, o2);
-            }
-            catch(Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        Bitmap original = null;
-
-        if(path.contains("http://"))
-        {
-            try
-            {
-                URL url = new URL(path);
-                original = BitmapFactory.decodeStream(url.openConnection().getInputStream());
             }
             catch(Exception e)
             {

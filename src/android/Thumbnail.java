@@ -70,7 +70,26 @@ public class Thumbnail extends CordovaPlugin {
             try
             {
                 URL url = new URL(path);
-                BitmapFactory.decodeStream(url.openConnection().getInputStream(), null, options);
+
+                Bitmap b = null;
+
+                //Decode image size
+                BitmapFactory.Options o = new BitmapFactory.Options();
+                o.inJustDecodeBounds = true;
+
+                BitmapFactory.decodeStream(url.openConnection().getInputStream(), null, o);
+
+                int scale = 1;
+                if (o.outHeight > MAX_IMAGE_DECODING_SIZE || o.outWidth > MAX_IMAGE_DECODING_SIZE) {
+                    scale = (int)Math.pow(2, (int) Math.ceil(Math.log(MAX_IMAGE_DECODING_SIZE /
+                            (double) Math.max(o.outHeight, o.outWidth)) / Math.log(0.5)));
+                }
+
+                //Decode with inSampleSize
+                BitmapFactory.Options o2 = new BitmapFactory.Options();
+                o2.inSampleSize = scale;
+
+                original = BitmapFactory.decodeStream(url.openConnection().getInputStream(), null, o2);
             }
             catch(Exception e)
             {

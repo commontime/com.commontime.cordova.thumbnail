@@ -62,25 +62,14 @@ public class Thumbnail extends CordovaPlugin {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
 
-        if(path.contains("http://"))
-        {
-            try
-            {
-                URL url = new URL(path);
-                BitmapFactory.decodeStream(url.openConnection().getInputStream(), null, options);
-            }
-            catch(Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-
         Bitmap original = null;
 
         if(path.contains("http://"))
         {
             try
             {
+                path = path.replace(" ", "%20");
+
                 URL url = new URL(path);
 
                 //Decode image size

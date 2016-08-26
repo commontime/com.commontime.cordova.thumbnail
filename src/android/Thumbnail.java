@@ -19,6 +19,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Locale;
 
 public class Thumbnail extends CordovaPlugin {
 
@@ -243,14 +244,13 @@ public class Thumbnail extends CordovaPlugin {
     {
         try
         {
-            String type = null;
-            url = url.toLowerCase();
-            url = url.replace(" ", "%20");
-            String extension = MimeTypeMap.getFileExtensionFromUrl(url);
-            if (extension != null) {
-                type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+            String extension = url;
+            int lastDot = extension.lastIndexOf('.');
+            if (lastDot != -1) {
+                extension = extension.substring(lastDot + 1);
             }
-            return type;
+            extension = extension.toLowerCase(Locale.getDefault());
+            return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
         }
         catch(Exception e)
         {

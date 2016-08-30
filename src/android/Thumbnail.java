@@ -112,6 +112,7 @@ public class Thumbnail extends CordovaPlugin {
         {
             try
             {
+                path = path.replace("/android_asset/www/", "");
                 original = getBitmapFromAsset(cordova.getActivity(), "www/" + path);
             }
             catch(Exception e)

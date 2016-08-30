@@ -255,6 +255,7 @@ public class Thumbnail extends CordovaPlugin {
         }
         catch(Exception e)
         {
+            e.printStackTrace();
             return null;
         }
     }

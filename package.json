@@ -1,6 +1,6 @@
 {
   "name": "com.commontime.cordova.thumbnail",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Commontime cordova thumbnail plugin.",
   "cordova": {
     "id": "com.commontime.cordova.thumbnail",

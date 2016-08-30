@@ -57,10 +57,7 @@ public class Thumbnail extends CordovaPlugin {
         }
         else
         {
-            if(!path.contains("file:///android_asset"))
-            {
-                path = path.replace("file://", "");
-            }
+            path = path.replace("file://", "");
         }
 
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -115,6 +112,7 @@ public class Thumbnail extends CordovaPlugin {
         {
             try
             {
+                path = path.replace("/android_asset/", "");
                 original = getBitmapFromAsset(cordova.getActivity(), path);
             }
             catch(Exception e)

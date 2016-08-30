@@ -113,6 +113,10 @@ public class Thumbnail extends CordovaPlugin {
             try
             {
                 path = path.replace("/android_asset/", "");
+                if(!path.contains("www/"))
+                {
+                    path = "www/" + path;
+                }
                 original = getBitmapFromAsset(cordova.getActivity(), path);
             }
             catch(Exception e)
@@ -197,6 +201,8 @@ public class Thumbnail extends CordovaPlugin {
 
         BitmapFactory.decodeStream(istr, null, o);
 
+        istr.close();
+
         int scale = 1;
         if (o.outHeight > MAX_IMAGE_DECODING_SIZE || o.outWidth > MAX_IMAGE_DECODING_SIZE) {
             scale = (int)Math.pow(2, (int) Math.ceil(Math.log(MAX_IMAGE_DECODING_SIZE /
@@ -206,6 +212,7 @@ public class Thumbnail extends CordovaPlugin {
         //Decode with inSampleSize
         BitmapFactory.Options o2 = new BitmapFactory.Options();
         o2.inSampleSize = scale;
+        istr = assetManager.open(path);
         b = BitmapFactory.decodeStream(istr, null, o2);
 
         return b;

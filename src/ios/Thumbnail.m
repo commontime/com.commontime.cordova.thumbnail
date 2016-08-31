@@ -63,7 +63,7 @@
         NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
         NSString *adjustedFilePath = [filePath stringByReplacingOccurrencesOfString: @"file:///" withString: @""];
         NSString *finalPath = [NSString stringWithFormat :@"file://%@/www/%@", appFolderPath, adjustedFilePath];
-     
+        finalPath = [finalPath stringByReplacingOccurrencesOfString: @" " withString: @"%20"];
         originalData = [NSData dataWithContentsOfURL: [NSURL URLWithString: finalPath]];
       }
       

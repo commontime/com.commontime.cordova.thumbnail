@@ -7,11 +7,13 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -24,10 +26,25 @@ import java.util.Locale;
 public class Thumbnail extends CordovaPlugin {
 
     private static final int MAX_IMAGE_DECODING_SIZE = 2000;
+    private static final String LOG_TAG = "Thumbnail";
+
+    private JSONArray savedArgs;
+    private int savedMaxWidth;
+    private int savedMaxHeight;
+    private int savedQuality;
+    private CallbackContext callbackContext;
+    private boolean wasDecrypted;
+    private static final String DECRYPT_FILE_MSG_ID = "DECRYPT_FILE";
+    private static final String DECRYPT_FILE_CALLBACK_MSG_ID = "DECRYPTION_RESPONSE";
+    private static final String DECRYPT_FILE_URI_KEY = "uri";
+    private static final String DECRYPT_FILE_CALLBACK_KEY = "cb";
+    private static final String DECRYPT_TARGET_KEY = "target";
+    private static final String ENCRYPTED_FILE_EXTENSION = ".encrypted";
 
     @Override
-    public boolean execute(String action, final JSONArray data, final CallbackContext callbackContext) throws JSONException
+    public boolean execute(String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException
     {
+        this.callbackContext = callbackContext;
         cordova.getThreadPool().execute(new Runnable()
         {
             @Override
@@ -35,7 +52,7 @@ public class Thumbnail extends CordovaPlugin {
             {
                 try
                 {
-                    getThumbnail(data.getString(0), data.getInt(1), data.getInt(2), data.getInt(3), callbackContext);
+                    getThumbnail(args.getString(0), args.getInt(1), args.getInt(2), args.getInt(3), args, callbackContext);
                 }
                 catch (Exception e)
                 {
@@ -47,8 +64,46 @@ public class Thumbnail extends CordovaPlugin {
         return true;
     }
 
-    private void getThumbnail(String path, int maxWidth, int maxHeight, int quality, CallbackContext callbackContext)
+    @Override
+    public Object onMessage(String id, Object data) {
+        if (id.equals(DECRYPT_FILE_CALLBACK_MSG_ID)) {
+            if (data != null) {
+                try {
+                    JSONObject jsonData = (JSONObject) data;
+                    getThumbnail(jsonData.getString(DECRYPT_FILE_URI_KEY), savedMaxWidth, savedMaxHeight, savedQuality, savedArgs, callbackContext);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    callbackContext.error("Failed to make thumbnail");
+                }
+            } else {
+                callbackContext.error("Failed to make thumbnail");
+            }
+        }
+        return super.onMessage(id, data);
+    }
+
+    private void getThumbnail(String path, int maxWidth, int maxHeight, int quality, JSONArray args, CallbackContext callbackContext) throws JSONException
     {
+        if (path.contains(ENCRYPTED_FILE_EXTENSION))
+        {
+            if (webView.getPluginManager().getPlugin("FileEncryption") == null)
+            {
+                callbackContext.error("Unable to decrypt to make a thumbnail for the file at '" + path + "'. File encryption plugin not present.");
+            }
+
+            savedArgs = args;
+            savedMaxWidth = maxWidth;
+            savedMaxHeight = maxHeight;
+            savedQuality = quality;
+            wasDecrypted = true;
+            JSONObject data = new JSONObject();
+            data.put(DECRYPT_FILE_URI_KEY, path);
+            data.put(DECRYPT_TARGET_KEY, cordova.getActivity().getCacheDir().getAbsolutePath());
+            data.put(DECRYPT_FILE_CALLBACK_KEY, DECRYPT_FILE_CALLBACK_MSG_ID);
+            webView.getPluginManager().postMessage(DECRYPT_FILE_MSG_ID, data);
+            return;
+        }
+
         if(path.contains("cdvfile://"))
         {
             CordovaResourceApi resourceApi = webView.getResourceApi();
@@ -130,6 +185,28 @@ public class Thumbnail extends CordovaPlugin {
             return;
         }
 
+        String base64String = getBase64String(original, options, path, maxWidth, maxHeight, quality);
+
+        if (wasDecrypted) {
+            File fdelete = new File(path);
+            if (fdelete.exists()) {
+                if (fdelete.delete()) {
+                    Log.d(LOG_TAG, "file Deleted : " + path);
+                } else {
+                    Log.d(LOG_TAG, "file not Deleted : " + path);
+                }
+            }
+            wasDecrypted = false;
+        }
+
+        if (base64String == null)
+            callbackContext.error("thumbnail error: unable to process image at " + path);
+        else
+            callbackContext.success(String.format("data:%s;base64,%s", getMimeType(path), base64String));
+    }
+
+    private String getBase64String(Bitmap original, BitmapFactory.Options options, String path, int maxWidth, int maxHeight, int quality)
+    {
         final int width = options.outWidth != 0 ? options.outWidth : original.getWidth();
         final int height = options.outHeight != 0 ? options.outHeight : original.getHeight();
         float ratio = 1;
@@ -162,11 +239,10 @@ public class Thumbnail extends CordovaPlugin {
         String mimeType = getMimeType(path);
 
         if (TextUtils.isEmpty(mimeType)) {
-            callbackContext.error("thumbnail error: unable to open image at " + path);
-            return;
+            return null;
         }
 
-        Bitmap.CompressFormat compressFormat = null;
+        Bitmap.CompressFormat compressFormat;
 
         if(mimeType.equals("image/png"))
             compressFormat = Bitmap.CompressFormat.PNG;
@@ -177,18 +253,17 @@ public class Thumbnail extends CordovaPlugin {
         thumb.compress(compressFormat, quality, output);
         thumb.recycle();
 
-        String base64 = Base64.encodeToString(output.toByteArray(), Base64.DEFAULT);
+        String base64String = Base64.encodeToString(output.toByteArray(), Base64.DEFAULT);
         try {
             output.close();
         } catch (IOException e) {
-            callbackContext.error("thumbnail error: error closing output stream");
-            return;
+            return null;
         }
 
-        callbackContext.success(String.format("data:%s;base64,%s", mimeType, base64));
+        return base64String;
     }
 
-    public Bitmap getBitmapFromAsset(Context context, String path) throws Exception
+    private Bitmap getBitmapFromAsset(Context context, String path) throws Exception
     {
         AssetManager assetManager = context.getAssets();
         InputStream istr = assetManager.open(path);

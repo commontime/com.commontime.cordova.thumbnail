@@ -113,6 +113,7 @@ public class Thumbnail extends CordovaPlugin {
         else
         {
             path = path.replace("file://", "");
+            path = path.replace("file:", "");
         }
 
         BitmapFactory.Options options = new BitmapFactory.Options();

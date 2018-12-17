@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 public class Thumbnail extends CordovaPlugin {
 
@@ -45,6 +46,7 @@ public class Thumbnail extends CordovaPlugin {
     private static final String DECRYPT_FILE_URI_KEY = "uri";
     private static final String DECRYPT_FILE_CALLBACK_KEY = "cb";
     private static final String DECRYPT_TARGET_KEY = "target";
+    private static final String ENCRYPT_DECRYPT_REQUEST_ID_KEY = "encryptDecryptRequestId";
     private static final String ENCRYPTED_FILE_EXTENSION = ".encrypted";
 
     @Override
@@ -54,7 +56,6 @@ public class Thumbnail extends CordovaPlugin {
             callbackContextList = new ArrayMap<String, CallbackContext>();
 
         //this.callbackContext = callbackContext;
-        callbackContextList.put(args.getString(0), callbackContext);
 
         cordova.getThreadPool().execute(new Runnable()
         {
@@ -81,8 +82,8 @@ public class Thumbnail extends CordovaPlugin {
             if (data != null) {
                 try {
                     JSONObject jsonData = (JSONObject) data;
-                    CallbackContext callbackContext = callbackContextList.get(((JSONObject) data).getString(ENCRYPT_DECRYPT_FILE_ORIGINAL_URI_KEY));
-                    callbackContextList.remove(((JSONObject) data).getString(ENCRYPT_DECRYPT_FILE_ORIGINAL_URI_KEY));
+                    CallbackContext callbackContext = callbackContextList.get(((JSONObject) data).getString(ENCRYPT_DECRYPT_REQUEST_ID_KEY));
+                    callbackContextList.remove(((JSONObject) data).getString(ENCRYPT_DECRYPT_REQUEST_ID_KEY));
                     getThumbnail(jsonData.getString(DECRYPT_FILE_URI_KEY), savedMaxWidth, savedMaxHeight, savedQuality, savedArgs, callbackContext);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -104,12 +105,17 @@ public class Thumbnail extends CordovaPlugin {
                 callbackContext.error("Unable to decrypt to make a thumbnail for the file at '" + path + "'. File encryption plugin not present.");
             }
 
+            String decryptRequestId = UUID.randomUUID().toString();
+
+            callbackContextList.put(decryptRequestId, callbackContext);
+
             savedArgs = args;
             savedMaxWidth = maxWidth;
             savedMaxHeight = maxHeight;
             savedQuality = quality;
             wasDecrypted = true;
             JSONObject data = new JSONObject();
+            data.put(ENCRYPT_DECRYPT_REQUEST_ID_KEY, decryptRequestId);
             data.put(DECRYPT_FILE_URI_KEY, path);
             data.put(DECRYPT_TARGET_KEY, cordova.getActivity().getCacheDir().getAbsolutePath());
             data.put(DECRYPT_FILE_CALLBACK_KEY, DECRYPT_FILE_CALLBACK_MSG_ID);

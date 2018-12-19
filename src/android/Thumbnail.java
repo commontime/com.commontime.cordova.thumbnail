@@ -5,7 +5,8 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.telecom.Call;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Base64;
@@ -23,8 +24,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -40,22 +39,21 @@ public class Thumbnail extends CordovaPlugin {
     private int savedQuality;
     private Map<String, CallbackContext> callbackContextList;
     private boolean wasDecrypted;
+    private static final String DECRYPT_FILE_ERROR_MSG = "Failed to make thumbnail due to file decryption";
     private static final String DECRYPT_FILE_MSG_ID = "DECRYPT_FILE";
     private static final String DECRYPT_FILE_CALLBACK_MSG_ID = "DECRYPTION_RESPONSE";
-    private static final String ENCRYPT_DECRYPT_FILE_ORIGINAL_URI_KEY = "originalUri";
     private static final String DECRYPT_FILE_URI_KEY = "uri";
     private static final String DECRYPT_FILE_CALLBACK_KEY = "cb";
     private static final String DECRYPT_TARGET_KEY = "target";
     private static final String ENCRYPT_DECRYPT_REQUEST_ID_KEY = "encryptDecryptRequestId";
     private static final String ENCRYPTED_FILE_EXTENSION = ".encrypted";
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
-    public boolean execute(String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException
+    public boolean execute(String action, final JSONArray args, final CallbackContext callbackContext)
     {
         if (callbackContextList == null)
             callbackContextList = new ArrayMap<String, CallbackContext>();
-
-        //this.callbackContext = callbackContext;
 
         cordova.getThreadPool().execute(new Runnable()
         {
@@ -82,15 +80,16 @@ public class Thumbnail extends CordovaPlugin {
             if (data != null) {
                 try {
                     JSONObject jsonData = (JSONObject) data;
-                    CallbackContext callbackContext = callbackContextList.get(((JSONObject) data).getString(ENCRYPT_DECRYPT_REQUEST_ID_KEY));
-                    callbackContextList.remove(((JSONObject) data).getString(ENCRYPT_DECRYPT_REQUEST_ID_KEY));
+                    String requestId = ((JSONObject) data).getString(ENCRYPT_DECRYPT_REQUEST_ID_KEY);
+                    CallbackContext callbackContext = callbackContextList.get(requestId);
+                    callbackContextList.remove(requestId);
                     getThumbnail(jsonData.getString(DECRYPT_FILE_URI_KEY), savedMaxWidth, savedMaxHeight, savedQuality, savedArgs, callbackContext);
                 } catch (JSONException e) {
                     e.printStackTrace();
-                    //callbackContext.error("Failed to make thumbnail");
+                    Log.e(LOG_TAG, DECRYPT_FILE_ERROR_MSG);
                 }
             } else {
-                //callbackContext.error("Failed to make thumbnail");
+                Log.e(LOG_TAG, DECRYPT_FILE_ERROR_MSG);
             }
         }
         return super.onMessage(id, data);

@@ -79,6 +79,7 @@
       }
       
       UIImage* original = [UIImage imageWithData: originalData];
+      original = [self fixImageRotationIfRequired: original];
       CGFloat width = original.size.width;
       CGFloat height = original.size.height;
       CGFloat ratio = 1;
@@ -119,7 +120,7 @@
         {
           thumbData = UIImageJPEGRepresentation(thumb, quality / 100.0);
         }
-        
+          
         NSString* thumbBase64 = [thumbData base64EncodedString];
         NSString* message = [NSString stringWithFormat: @"data:%@;base64,%@", mimeType, thumbBase64];
         
@@ -176,6 +177,12 @@
       }
     }
   }
+}
+
+- (UIImage*) fixImageRotationIfRequired: (UIImage*) image
+{
+    if (image.imageOrientation == UIImageOrientationUp) return image;
+    return [[UIImage alloc] initWithCGImage: image.CGImage scale:1.0 orientation:UIImageOrientationUp];
 }
 
 @end

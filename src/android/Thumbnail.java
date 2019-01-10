@@ -82,6 +82,7 @@ public class Thumbnail extends CordovaPlugin {
                     JSONObject jsonData = (JSONObject) data;
                     String requestId = ((JSONObject) data).getString(ENCRYPT_DECRYPT_REQUEST_ID_KEY);
                     CallbackContext callbackContext = callbackContextList.get(requestId);
+                    if (callbackContext == null) return;
                     callbackContextList.remove(requestId);
                     getThumbnail(jsonData.getString(DECRYPT_FILE_URI_KEY), savedMaxWidth, savedMaxHeight, savedQuality, savedArgs, callbackContext);
                 } catch (JSONException e) {

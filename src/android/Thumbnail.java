@@ -41,7 +41,7 @@ public class Thumbnail extends CordovaPlugin {
     private boolean wasDecrypted;
     private static final String DECRYPT_FILE_ERROR_MSG = "Failed to make thumbnail due to file decryption";
     private static final String DECRYPT_FILE_MSG_ID = "DECRYPT_FILE";
-    private static final String DECRYPT_FILE_CALLBACK_MSG_ID = "DECRYPTION_RESPONSE";
+    private static final String DECRYPT_FILE_CALLBACK_MSG_ID = "THUMBNAIL_DECRYPTION_RESPONSE";
     private static final String DECRYPT_FILE_URI_KEY = "uri";
     private static final String DECRYPT_FILE_CALLBACK_KEY = "cb";
     private static final String DECRYPT_TARGET_KEY = "target";
